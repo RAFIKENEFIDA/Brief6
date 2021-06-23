@@ -21,20 +21,9 @@ class ApiUser
         $requets->prenom = $data->prenom;
         $requets->date_naissance = $data->date_naissance;
 
+        $requets->create();
 
-        if ($requets->create()) {
-            echo json_encode(
-                array(
-                    'message' => 'donnees client sont inserer'
-                )
-            );
-        } else {
-            echo json_encode(
-                array(
-                    'message' => 'donnees client ne sont pas inserer'
-                )
-            );
-        }
+
 
         // inserte refrence du client
 
@@ -47,24 +36,15 @@ class ApiUser
 
 
         $requets->reference = $requets->prenom .  $requets->id_user;
-        echo var_dump($requets->id_user);
-        echo var_dump($requets->prenom);
 
-        echo var_dump($requets->reference);
 
-        if ($requets->InsertReference()) {
-            echo json_encode(
-                array(
-                    'message' => 'reference inserte'
-                )
-            );
-        } else {
-            echo json_encode(
-                array(
-                    'message' => 'reference no inserer'
-                )
-            );
-        }
+        $requets->InsertReference();
+
+        echo json_encode(
+            array(
+                "reference" => $requets->reference,
+            )
+        );
     }
 
     function inserteReservation()
@@ -81,11 +61,15 @@ class ApiUser
         $requets = new Requets($conn);
         // inserte dand la table de client
         $data = json_decode(file_get_contents("php://input"));
+        $requets->reference = $data->reference;
+        $res = $requets->getIdUser();
+        echo $res['id_user'];
 
         $requets->time_on = $data->time_on;
         $requets->time_out = $data->time_out;
-        $requets->id_user = $data->id_user;
+        $requets->id_user = $res['id_user'];
         $requets->jour = $data->jour;
+        $requets->note = $data->note;
 
         $result = $requets->recupererIdCreneau();
         $requets->id_cr = $result['id_cr'];
@@ -93,13 +77,44 @@ class ApiUser
         if ($requets->insertReservation()) {
             echo json_encode(
                 array(
-                    'message' => 'donnees client sont inserer'
+                    'message' => 'true'
                 )
             );
         } else {
             echo json_encode(
                 array(
-                    'message' => 'donnees client ne sont pas inserer'
+                    'message' => 'false'
+                )
+            );
+        }
+    }
+
+    function checkReference()
+    {
+
+        header('Access-Control-Allow-Origin: *');
+        header('Content-type: application/json');
+        header('Access-control-Allow-Methods:POST');
+
+        $obj = new Database;
+        $conn = $obj->connect();
+
+        $requets = new Requets($conn);
+        // inserte dand la table de client
+        $data = json_decode(file_get_contents("php://input"));
+
+        $requets->reference = $data->reference;
+        $result = $requets->checkReference();
+        if ($result['reference_existe'] == true) {
+            echo json_encode(
+                array(
+                    'reference_existe' => 'true',
+                )
+            );
+        } else {
+            echo json_encode(
+                array(
+                    'reference_existe' => 'false',
                 )
             );
         }
